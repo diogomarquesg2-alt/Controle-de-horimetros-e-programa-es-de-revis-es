@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EQUIP CONTROL PRO - Gestão de Frota (Cloud)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; }
+        th { text-transform: uppercase; font-size: 0.70rem; font-weight: 700; color: #64748b; padding: 1rem; text-align: left; border-bottom: 2px solid #e2e8f0; white-space: nowrap; background-color: #f8fafc; }
+        td { padding: 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; color: #334155; vertical-align: middle; background-color: #ffffff; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        .accent-primary { accent-color: #2563eb; width: 1.1rem; height: 1.1rem; cursor: pointer; }
+        canvas { max-height: 320px; }
+        
+        /* Spinner de Carregamento para Uploads */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- OVERLAY DE CARREGAMENTO GLOBAL -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-80 flex flex-col justify-center items-center z-[200] backdrop-blur-sm hidden">
+        <div class="loader mb-4" style="width: 40px; height: 40px; border-width: 4px;"></div>
+        <p class="text-white font-bold text-lg" id="loadingText">A sincronizar com a Nuvem...</p>
+    </div>
+
+    <!-- CABEÇALHO MOBILE -->
+    <div class="md:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center z-20 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-emerald-500 text-white p-1.5 rounded shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            </div>
+            <h1 class="font-extrabold text-slate-800 text-lg">EQUIP CONTROL</h1>
+        </div>
+        <button onclick="toggleMenu()" class="text-slate-600 focus:outline-none p-2 bg-slate-100 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+    <!-- OVERLAY DO MENU MOBILE -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleMenu()"></div>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900 bg-opacity-90 flex justify-center items-center z-[100] backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-8 w-11/12 max-w-md shadow-2xl relative">
+            <div class="text-center mb-6">
+                <div class="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-800">Acesso ao Sistema</h2>
+                <p class="text-sm text-slate-500 mt-1">Identifique-se para aceder ao Equip Control</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Seu Nome / Matrícula</label>
+                    <input type="text" id="loginNome" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: João Silva">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Perfil de Acesso</label>
+                    <select id="loginPerfil" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="toggleSenha()">
+                        <option value="visitante">Visitante (Apenas Consulta)</option>
+                        <option value="mecanico">Mecânico / Apontador</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div id="divSenha" class="hidden">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Senha</label>
+                    <input type="password" id="loginSenha" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite a sua senha">
+                </div>
+                <button onclick="efetuarLogin()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition shadow-md mt-2">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA LATERAL -->
+    <aside id="sidebar" class="absolute md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div class="p-5 border-b border-slate-100 hidden md:flex items-center gap-3">
+            <div class="bg-emerald-500 text-white p-2.5 rounded-lg shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-extrabold text-slate-800 leading-tight">EQUIP CONTROL</h1>
+                <p class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">Gestão de Frota <span class="w-2 h-2 rounded-full bg-green-500" title="Online na Nuvem"></span></p>
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs" id="userInitials">U</div>
+                <div>
+                    <p class="text-xs font-bold text-slate-700" id="userNameDisplay">Utilizador</p>
+                    <p class="text-[10px] font-semibold text-slate-500 uppercase" id="userRoleDisplay">Perfil</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-xs text-red-500 hover:underline font-medium">Sair</button>
+        </div>
+        
+        <div class="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Procurar Equipamento</label>
+                <input type="text" id="searchInput" placeholder="Ex: EQP-001" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Origem</label>
+                <select id="filterOrigem" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"><option value="ALL">Todas</option></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Cliente / Base</label>
+                <select id="filterCliente" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"><option value="ALL">Todos</option></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-2 mt-2">Estado</label>
+                <div class="space-y-3 md:space-y-2">
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="cbAnomalia" checked class="accent-primary"> <span class="w-2 h-2 rounded-full bg-purple-500"></span> Anomalia (< -500h)</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="cbAtrasado" checked class="accent-primary"> <span class="w-2 h-2 rounded-full bg-red-500"></span> Atrasado (< 0h)</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="cbCritico" checked class="accent-primary"> <span class="w-2 h-2 rounded-full bg-orange-500"></span> Crítico (0 a 50h)</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="cbAtencao" checked class="accent-primary"> <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Atenção (51 a 150h)</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="cbOk" checked class="accent-primary"> <span class="w-2 h-2 rounded-full bg-emerald-500"></span> OK (> 150h)</label>
+                </div>
+            </div>
+            <button onclick="toggleMenu()" class="w-full mt-4 md:hidden border border-slate-300 text-slate-600 font-bold py-2 rounded-lg">Fechar Filtros</button>
+        </div>
+
+        <div class="p-5 border-t border-slate-100 bg-slate-50 space-y-3">
+            <button onclick="abrirHistorico()" class="w-full bg-white border border-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg text-xs hover:bg-slate-100 shadow-sm flex justify-center items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Ver Histórico (Nuvem)
+            </button>
+
+            <div id="adminControls" class="hidden">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <h4 class="text-xs font-bold text-blue-900 mb-2">Ações de Admin</h4>
+                    
+                    <button onclick="abrirAprovacoes()" class="w-full bg-orange-500 text-white font-bold py-2 rounded-lg text-xs hover:bg-orange-600 shadow-sm mb-2 flex justify-between px-3 items-center transition-colors">
+                        Aprovações Pendentes <span id="badgeAprovacoes" class="bg-white text-orange-600 px-1.5 py-0.5 rounded-full text-[10px] font-black">0</span>
+                    </button>
+
+                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden">
+                    <button onclick="document.getElementById('fileUpload').click()" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg text-xs hover:bg-blue-700 shadow-sm mb-2">Importar Excel Base</button>
+                    
+                    <button onclick="exportarExcel()" class="w-full bg-emerald-600 text-white font-semibold py-2 rounded-lg text-xs hover:bg-emerald-700 shadow-sm">Exportar Planilha (.xlsx)</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar w-full p-4 md:p-6 lg:p-10 relative z-10">
+        <div class="mb-6 hidden md:block"><h2 class="text-2xl font-extrabold text-slate-800">Painel Operacional</h2></div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div class="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-200">
+                <h3 class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Equipamentos</h3>
+                <p class="text-2xl md:text-3xl font-black text-slate-800 my-1" id="kpiTotal">0</p>
+                <p class="text-[10px] md:text-xs text-slate-400 font-medium">Frota listada</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                <h3 class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Saúde da Frota</h3>
+                <p class="text-2xl md:text-3xl font-black text-slate-800 my-1" id="kpiSaude">0%</p>
+                <p class="text-[10px] md:text-xs text-emerald-600 font-bold">OK ou Atenção</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-200 border-l-4 border-l-red-500">
+                <h3 class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Atrasados</h3>
+                <p class="text-2xl md:text-3xl font-black text-slate-800 my-1" id="kpiAtrasado">0</p>
+                <p class="text-[10px] md:text-xs text-red-500 font-bold" id="kpiAtrasadoPct">0% da frota</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
+                <h3 class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Anomalias</h3>
+                <p class="text-2xl md:text-3xl font-black text-slate-800 my-1" id="kpiAnomalia">0</p>
+                <p class="text-[10px] md:text-xs text-purple-600 font-bold">Inconsistentes</p>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 md:h-[350px]">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[250px] md:h-auto">
+                <h3 class="text-sm font-bold text-slate-800 mb-4">Estado da Frota</h3>
+                <div class="relative flex-1 w-full flex justify-center"><canvas id="chartStatus"></canvas></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col h-[250px] md:h-auto lg:col-span-2">
+                <h3 class="text-sm font-bold text-slate-800 mb-4">Top 10 Prioridade (Menos Horas)</h3>
+                <div class="relative flex-1 w-full"><canvas id="chartTop10"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 pb-2 mb-10">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-xl">
+                <h3 class="text-sm font-bold text-slate-800">Controlo Operacional</h3>
+                <span class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-md" id="tableRecordCount">0 registos</span>
+            </div>
+            <div class="overflow-x-auto w-full custom-scrollbar">
+                <table id="dataTable" class="min-w-[1000px] md:min-w-[1200px]">
+                    <thead class="bg-slate-50/80">
+                        <tr>
+                            <th>CLIENTE</th><th>FROTA / ID</th><th>ÚLT. REV</th><th>TIPO REV.</th>
+                            <th>HOR. ATUAL</th><th>DATA HOR.</th><th>PRÓX. REV.</th>
+                            <th class="text-center">RESTANTE</th><th>ESTADO</th><th class="text-center">AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="10" class="text-center text-slate-400 py-8 italic">A carregar dados da nuvem...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE PEÇAS COM CHECKBOX E ADIÇÃO -->
+    <div id="pecasModal" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-11/12 max-w-lg max-h-[90vh] flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800" id="modalTitle">Kits de Manutenção</h2>
+                    <p class="text-sm text-slate-500 mt-1 leading-snug" id="modalSubtitle">Detalhes</p>
+                </div>
+                <button onclick="closeModal('pecasModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl">&times;</button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1 mt-2 p-4 bg-slate-50 rounded-lg border border-slate-200 custom-scrollbar" id="modalBody"></div>
+            
+            <div id="areaAdicionarPeca" class="mt-4 gap-2" style="display: none;">
+                <input type="text" id="inputNovaPeca" class="flex-1 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 2L Óleo Hidráulico extra...">
+                <button id="btnSalvarPeca" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm flex items-center justify-center">+</button>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2 flex-wrap">
+                <!-- Botão do WhatsApp (Só Admin) -->
+                <button id="btnWhatsapp" style="display: none;" class="flex-1 md:flex-none bg-green-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-green-600 flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
+                    WhatsApp
+                </button>
+                <button onclick="closeModal('pecasModal')" class="flex-1 md:flex-none bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EMAIL COM NUVEM REAL -->
+    <div id="modalEmailOS" class="fixed inset-0 bg-slate-900 bg-opacity-70 hidden justify-center items-center z-[70] backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md shadow-2xl relative">
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Gerar E-mail da O.S. (Nuvem)</h2>
+            <p class="text-xs text-blue-600 font-semibold bg-blue-50 p-2 rounded mb-4">
+                ☁️ Firebase Ativado: O PDF será guardado na nuvem e o e-mail será aberto automaticamente com o link seguro.
+            </p>
+
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 text-[11px] text-slate-600 font-mono whitespace-pre-wrap leading-relaxed" id="previewEmailTexto"></div>
+
+            <div class="mb-5 bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                <label class="block text-xs font-bold text-blue-800 mb-2">📁 Enviar PDF para a Nuvem</label>
+                <input type="file" id="pdfOSUpload" accept=".pdf" class="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <button onclick="closeModal('modalEmailOS')" class="bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-lg hover:bg-slate-300 text-sm">Cancelar</button>
+                <button id="btnConfirmarEmailOS" class="bg-blue-600 text-white font-bold px-5 py-2.5 rounded-lg shadow hover:bg-blue-700 text-sm flex items-center gap-2">
+                    Enviar Sem Anexo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO COM FOTO OBRIGATÓRIA -->
+    <div id="editEquipModal" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h2 class="text-xl font-bold mb-4 text-slate-800">Lançar Horímetro</h2>
+            <input id="editEquipFrota" class="bg-slate-100 border border-slate-200 rounded-lg p-3 w-full mb-3 text-slate-600 font-bold" disabled>
+            
+            <label class="block text-xs font-bold text-slate-600 mb-1">Novo Horímetro</label>
+            <input type="number" id="editEquipHoras" class="border border-slate-300 rounded-lg p-3 w-full mb-4 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite o valor atual">
+            
+            <div class="mb-4 bg-red-50 p-4 rounded-lg border border-red-200">
+                <label class="block text-xs font-bold text-red-700 mb-2">📸 OBRIGATÓRIO: Anexar Foto do Painel</label>
+                <input type="file" id="fotoInput" accept="image/*" capture="environment" class="text-sm text-red-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-red-600 file:text-white hover:file:bg-red-700 w-full cursor-pointer">
+                <canvas id="fotoCanvas" style="display:none;"></canvas>
+                <img id="fotoPreview" src="" class="hidden w-full h-32 object-cover rounded-lg mt-3 border border-red-200 shadow-sm">
+            </div>
+
+            <div class="flex gap-2 justify-end flex-col sm:flex-row">
+                <button onclick="closeModal('editEquipModal')" class="w-full sm:w-auto bg-slate-100 text-slate-600 font-bold px-4 py-3 sm:py-2 rounded-lg hover:bg-slate-200">Cancelar</button>
+                <button onclick="salvarEdicao()" class="w-full sm:w-auto bg-blue-600 text-white font-bold px-4 py-3 sm:py-2 rounded-lg shadow-md hover:bg-blue-700" id="btnSalvarEdicao">Enviar para Aprovação</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE FILA DE APROVAÇÃO (EXCLUSIVO ADMIN) -->
+    <div id="aprovacaoModal" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-11/12 max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Aprovações Pendentes</h2>
+                    <p class="text-[10px] md:text-sm text-slate-500 mt-1">Valide a foto. Ao aprovar/recusar, a imagem é eliminada da nuvem para poupar espaço.</p>
+                </div>
+                <button onclick="closeModal('aprovacaoModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 py-2 grid grid-cols-1 md:grid-cols-2 gap-4 custom-scrollbar" id="aprovacaoBody"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE HISTÓRICO -->
+    <div id="historicoModal" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden justify-center items-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-11/12 max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold text-slate-800">Histórico de Alterações</h2>
+                <button onclick="closeModal('historicoModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 py-2 space-y-3 custom-scrollbar" id="historicoBody"></div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA VER FOTO AMPLIADA -->
+    <div id="viewFotoModal" class="fixed inset-0 bg-black bg-opacity-90 hidden justify-center items-center z-[60] p-4">
+        <div class="relative w-full max-w-3xl flex flex-col items-center">
+            <button onclick="closeModal('viewFotoModal')" class="self-end text-white hover:text-red-500 font-bold text-3xl mb-2">&times;</button>
+            <img id="viewFotoImg" src="" class="w-full max-h-[80vh] object-contain rounded-lg shadow-2xl">
+        </div>
+    </div>
+
+    <!-- SCRIPT TIPO MÓDULO (FIREBASE V10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVGsMIplOh3kMaVyzEeKr_fz8IYuo3CmM",
+            authDomain: "controle-de-horimetro.firebaseapp.com",
+            projectId: "controle-de-horimetro",
+            storageBucket: "controle-de-horimetro.firebasestorage.app",
+            messagingSenderId: "999708949837",
+            appId: "1:999708949837:web:8759955dfe1e80f9904b04",
+            measurementId: "G-049XV4708P"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // --- VARIÁVEIS GLOBAIS ---
+        let currentUser = { nome: '', perfil: '' };
+        let globalData = [];
+        let historico = [];
+        let pendencias = [];
+        
+        let equipamentoEditando = null;
+        let fotoComprimidaBase64 = null;
+        let chartStatusInstance = null;
+        let chartTop10Instance = null;
+
+        // SENHAS MANTIDAS NO CÓDIGO CONFORME REQUISITO ANTERIOR
+        const senhas = {
+            "decio santos": "121312", "joao martin": "537801", "davi gomes": "489288", "andre filho": "359131",
+            "gabriel amaral": "430153", "matheus santos": "390420", "alcinei goncalves": "162284", "anderson santos": "364984",
+            "carlos santos": "284569", "fabiano lima": "226208", "arthur santos": "358741", "andre farias": "303397",
+            "joao silva": "373097", "gladstone pereira": "319562", "daniel silva": "229880", "danilson braz": "408728",
+            "leandro silva": "60289", "luiz rolemberg": "405212"
+        };
+        const senhaAdmin = "Equiport2026@";
+
+        function showLoading(text) {
+            document.getElementById('loadingText').innerText = text;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            const savedUser = localStorage.getItem('equip_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                aplicarPerfil();
+            } else {
+                document.getElementById('loginModal').classList.remove('hidden');
+            }
+            addEventListeners();
+            iniciarSincronizacaoNuvem();
+        };
+
+        // --- SINCRONIZAÇÃO EM TEMPO REAL COM O FIREBASE ---
+        function iniciarSincronizacaoNuvem() {
+            // Sincroniza Equipamentos
+            onSnapshot(collection(db, "equipamentos"), (snapshot) => {
+                globalData = [];
+                snapshot.forEach((doc) => {
+                    globalData.push({ idFirebase: doc.id, ...doc.data() });
+                });
+                updateFilters(); 
+                renderDashboard();
+            });
+
+            // Sincroniza Aprovações
+            onSnapshot(collection(db, "pendencias"), (snapshot) => {
+                pendencias = [];
+                snapshot.forEach((doc) => {
+                    pendencias.push({ idFirebase: doc.id, ...doc.data() });
+                });
+                atualizarBadgeAprovacoes();
+                // Se a janela de aprovação estiver aberta, atualiza-a
+                if (!document.getElementById('aprovacaoModal').classList.contains('hidden')) {
+                    abrirAprovacoes();
+                }
+                renderDashboard(); // para atualizar os botões de edição bloqueados
+            });
+
+            // Sincroniza Histórico
+            const qHist = query(collection(db, "historico"), orderBy("timestamp", "desc"));
+            onSnapshot(qHist, (snapshot) => {
+                historico = [];
+                snapshot.forEach((doc) => {
+                    historico.push(doc.data());
+                });
+            });
+        }
+
+        // MAPEAMENTO DAS FUNÇÕES PARA O WINDOW (Necessário ao usar type="module")
+        window.toggleMenu = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
+        window.toggleSenha = function() {
+            const perfil = document.getElementById('loginPerfil').value;
+            document.getElementById('divSenha').style.display = perfil === 'visitante' ? 'none' : 'block';
+        };
+
+        window.efetuarLogin = function() {
+            const nomeDigitado = document.getElementById('loginNome').value.trim();
+            const perfil = document.getElementById('loginPerfil').value;
+            const senha = document.getElementById('loginSenha').value;
+
+            if(!nomeDigitado) return alert("Digite o seu nome!");
+            if(perfil === 'admin' && senha !== senhaAdmin) return alert("Senha de Administrador incorreta!");
+            
+            if(perfil === 'mecanico') {
+                const nomeLimpo = nomeDigitado.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/\s+/);
+                const primeiroNome = nomeLimpo[0];
+                const ultimoNome = nomeLimpo.length > 1 ? nomeLimpo[nomeLimpo.length - 1] : '';
+                const key = ultimoNome ? `${primeiroNome} ${ultimoNome}` : primeiroNome;
+
+                if(!senhas[key] || senhas[key] !== senha) {
+                    return alert("Mecânico não registado ou senha inválida!\nCertifique-se que utiliza o seu Primeiro e Último nome. Ex: Gabriel Amaral");
+                }
+            }
+
+            currentUser = { nome: nomeDigitado, perfil };
+            localStorage.setItem('equip_user', JSON.stringify(currentUser));
+            document.getElementById('loginModal').classList.add('hidden');
+            aplicarPerfil();
+            renderDashboard();
+        };
+
+        window.logout = function() {
+            localStorage.removeItem('equip_user');
+            location.reload();
+        };
+
+        function aplicarPerfil() {
+            document.getElementById('userNameDisplay').innerText = currentUser.nome;
+            document.getElementById('userRoleDisplay').innerText = currentUser.perfil;
+            document.getElementById('userInitials').innerText = currentUser.nome.charAt(0).toUpperCase();
+
+            if(currentUser.perfil === 'admin') {
+                document.getElementById('adminControls').classList.remove('hidden');
+                document.getElementById('btnSalvarEdicao').innerText = "Salvar / Aprovar"; 
+            } else {
+                document.getElementById('adminControls').classList.add('hidden');
+                document.getElementById('btnSalvarEdicao').innerText = "Enviar para Aprovação"; 
+            }
+            atualizarBadgeAprovacoes();
+        }
+
+        function addEventListeners() {
+            ['searchInput', 'filterOrigem', 'filterCliente'].forEach(id => {
+                document.getElementById(id).addEventListener('input', renderDashboard);
+            });
+            ['cbAnomalia', 'cbAtrasado', 'cbCritico', 'cbAtencao', 'cbOk'].forEach(id => {
+                document.getElementById(id).addEventListener('change', renderDashboard);
+            });
+            
+            document.getElementById('fotoInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.getElementById('fotoCanvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 600;
+                        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        fotoComprimidaBase64 = canvas.toDataURL('image/jpeg', 0.6); 
+                        document.getElementById('fotoPreview').src = fotoComprimidaBase64;
+                        document.getElementById('fotoPreview').classList.remove('hidden');
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            });
+
+            // UPLOAD DO EXCEL PARA O FIREBASE (BATCH / MULTIPLOS DOCS)
+            document.getElementById('fileUpload').addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                showLoading("A carregar Excel para a Nuvem...");
+                
+                const reader = new FileReader();
+                reader.onload = async function(ev) {
+                    try {
+                        const data = new Uint8Array(ev.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        let records = [];
+                        workbook.SheetNames.forEach(sheet => {
+                            const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {header: 1});
+                            if(raw.length === 0) return;
+                            let headIdx = -1, colKits = -1;
+                            for (let i = 0; i < 20; i++) {
+                                if (raw[i] && raw[i].some(c => typeof c === 'string' && c.toUpperCase().includes('CLIENTES'))) {
+                                    headIdx = i; colKits = raw[i].findIndex(c => typeof c === 'string' && c.toUpperCase().trim() === 'KITS'); break;
+                                }
+                            }
+                            if(headIdx === -1) return;
+
+                            for (let i = headIdx + 1; i < raw.length; i++) {
+                                const row = raw[i];
+                                if (!row || !row[0]) continue;
+                                let prox = parseFloat(row[5]), atual = parseFloat(row[6]);
+                                if(isNaN(prox) || isNaN(atual)) continue;
+                                
+                                let frotaSafe = String(row[1]||"-").trim();
+                                // Substitui barras por tracos para ser ID válido no Firebase
+                                let docId = frotaSafe.replace(/\//g, '-').replace(/\s+/g, '_'); 
+
+                                records.push({
+                                    docId: docId,
+                                    origem: sheet, 
+                                    cliente: String(row[0]||"-").trim(), frota: frotaSafe, sn: String(row[2]||"-").trim(),
+                                    dataUltima: String(row[3]||"-").trim(), tipoRev: String(row[4]||"-").trim(), horProx: prox, horAtual: atual,
+                                    dataHor: String(row[7]||"-").trim(), hrRestantes: Math.round(prox - atual), 
+                                    kits: colKits !== -1 ? String(row[colKits]||"") : "",
+                                    kitsMarcados: []
+                                });
+                            }
+                        });
+
+                        // Envia para o Firebase um por um (ou atualiza)
+                        for(let r of records) {
+                            const docRef = doc(db, "equipamentos", r.docId);
+                            // Mantemos os kits antigos se já existirem na nuvem, atualizamos o resto
+                            const equipAntigo = globalData.find(g => g.idFirebase === r.docId);
+                            if(equipAntigo) {
+                                r.kits = equipAntigo.kits;
+                                r.kitsMarcados = equipAntigo.kitsMarcados || [];
+                            }
+                            delete r.docId; // Não precisa guardar dentro dos dados
+                            await setDoc(docRef, r);
+                        }
+                        
+                        hideLoading();
+                        alert("Planilha sincronizada com a Nuvem com sucesso!");
+                    } catch(err) { 
+                        hideLoading();
+                        alert("Erro ao ler Excel: " + err); 
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                e.target.value = ''; // Limpa o input
+            });
+        }
+
+        function updateFilters() {
+            let origens = [...new Set(globalData.map(d => d.origem))].sort();
+            let clientes = [...new Set(globalData.map(d => d.cliente))].sort();
+            let selO = document.getElementById('filterOrigem'); selO.innerHTML = '<option value="ALL">Todas</option>';
+            origens.forEach(o => selO.innerHTML += `<option value="${o}">${o}</option>`);
+            let selC = document.getElementById('filterCliente'); selC.innerHTML = '<option value="ALL">Todos</option>';
+            clientes.forEach(c => selC.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+
+        function renderDashboard() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const o = document.getElementById('filterOrigem').value;
+            const c = document.getElementById('filterCliente').value;
+            const cbAno = document.getElementById('cbAnomalia').checked;
+            const cbAtr = document.getElementById('cbAtrasado').checked;
+            const cbCri = document.getElementById('cbCritico').checked;
+            const cbAte = document.getElementById('cbAtencao').checked;
+            const cbOk  = document.getElementById('cbOk').checked;
+
+            let fd = globalData.filter(d => {
+                let s = d.hrRestantes;
+                let matchStatus = (cbAno && s < -500) || (cbAtr && s >= -500 && s < 0) || (cbCri && s >= 0 && s <= 50) || (cbAte && s > 50 && s <= 150) || (cbOk && s > 150);
+                
+                let matchSearch = search === "" || String(d.frota).toLowerCase().includes(search) || String(d.sn).toLowerCase().includes(search) || String(d.cliente).toLowerCase().includes(search);
+                return (o==="ALL"||d.origem===o) && (c==="ALL"||d.cliente===c) && matchSearch && matchStatus;
+            });
+
+            let qAno = fd.filter(d => d.hrRestantes < -500).length;
+            let qAtr = fd.filter(d => d.hrRestantes >= -500 && d.hrRestantes < 0).length;
+            let qCri = fd.filter(d => d.hrRestantes >= 0 && d.hrRestantes <= 50).length;
+            let qAte = fd.filter(d => d.hrRestantes > 50 && d.hrRestantes <= 150).length;
+            let qOk  = fd.filter(d => d.hrRestantes > 150).length;
+            
+            let total = fd.length; let saudaveis = qOk + qAte;
+            document.getElementById('kpiTotal').innerText = total;
+            document.getElementById('kpiSaude').innerText = total > 0 ? Math.round((saudaveis / total) * 100) + "%" : "0%";
+            document.getElementById('kpiAtrasado').innerText = qAtr;
+            document.getElementById('kpiAtrasadoPct').innerText = (total > 0 ? Math.round((qAtr / total) * 100) : 0) + "% da frota";
+            document.getElementById('kpiAnomalia').innerText = qAno;
+            document.getElementById('tableRecordCount').innerText = total + " registos";
+
+            renderCharts(qOk, qAte, qCri, qAtr, qAno, fd);
+            renderTable(fd);
+        }
+
+        function renderCharts(ok, ate, cri, atr, ano, data) {
+            if(chartStatusInstance) chartStatusInstance.destroy();
+            chartStatusInstance = new Chart(document.getElementById('chartStatus'), {
+                type: 'doughnut',
+                data: { labels: ['Anomalia', 'Atrasado', 'Crítico', 'Atenção', 'OK'],
+                        datasets: [{ data: [ano, atr, cri, ate, ok], backgroundColor: ['#a855f7','#ef4444','#f97316','#facc15','#10b981'], borderWidth:0, cutout:'65%'}] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels:{font:{size:10}} } } }
+            });
+
+            const top10 = [...data].filter(d => d.hrRestantes >= -500).sort((a,b) => a.hrRestantes - b.hrRestantes).slice(0,10);
+            if(chartTop10Instance) chartTop10Instance.destroy();
+            chartTop10Instance = new Chart(document.getElementById('chartTop10'), {
+                type: 'bar',
+                data: { labels: top10.map(d => d.frota),
+                        datasets: [{ data: top10.map(d => d.hrRestantes), backgroundColor: top10.map(d => d.hrRestantes < 0 ? '#ef4444' : (d.hrRestantes <= 50 ? '#f97316' : '#10b981')), borderRadius:4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: {display:false} }, scales: { y: { ticks: { font: {size: 9} } } } }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            if(data.length === 0) return tbody.innerHTML = '<tr><td colspan="10" class="text-center text-slate-400 py-6">Nenhum dado encontrado.</td></tr>';
+
+            data.sort((a,b) => a.hrRestantes - b.hrRestantes).forEach(i => {
+                let badge = '';
+                if(i.hrRestantes < -500) badge = `<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">Anomalia</span>`;
+                else if(i.hrRestantes < 0) badge = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Atrasado</span>`;
+                else if(i.hrRestantes <= 50) badge = `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">Crítico</span>`;
+                else if(i.hrRestantes <= 150) badge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">Atenção</span>`;
+                else badge = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">OK</span>`;
+
+                let emAprovacao = pendencias.some(p => p.idFirebaseEquip === i.idFirebase);
+                
+                let btnEdit = '';
+                if (currentUser.perfil === 'visitante') {
+                    btnEdit = `<button disabled class="bg-slate-100 text-slate-300 px-2 py-1 rounded text-xs font-bold cursor-not-allowed">Editar</button>`;
+                } else if (emAprovacao) {
+                    btnEdit = `<button disabled class="bg-orange-100 text-orange-600 border border-orange-200 px-2 py-1 rounded text-xs font-bold" title="Aguardando Admin">⏳ Em Análise</button>`;
+                } else {
+                    btnEdit = `<button onclick="abrirEdicao('${i.idFirebase}')" class="bg-blue-50 border border-blue-200 text-blue-600 px-2 py-1 rounded text-xs font-bold hover:bg-blue-100">✏️ Editar</button>`;
+                }
+
+                let temKits = i.kits && i.kits.trim() !== '';
+                let btnKits = temKits 
+                    ? `<button onclick="abrirKits('${i.idFirebase}')" class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-1 rounded text-xs font-bold hover:bg-indigo-100 flex items-center gap-1 shadow-sm"><span class="text-[10px]">📦</span> Kits</button>`
+                    : `<button onclick="abrirKits('${i.idFirebase}')" class="bg-white border border-slate-200 text-slate-400 px-2 py-1 rounded text-xs font-bold hover:bg-slate-50 opacity-60">Kits</button>`;
+
+                let btnEmail = '';
+                if (currentUser.perfil === 'admin') {
+                    btnEmail = `<button onclick="abrirModalEmailOS('${i.idFirebase}')" class="bg-sky-50 border border-sky-200 text-sky-700 px-2 py-1 rounded text-xs font-bold hover:bg-sky-100 flex items-center gap-1 shadow-sm" title="Enviar O.S. por E-mail"><span class="text-[10px]">✉️</span> O.S.</button>`;
+                }
+
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bold">${i.cliente}</td>
+                    <td><div class="font-bold text-slate-800">${i.frota}</div><div class="text-[0.65rem] text-slate-400">${i.sn}</div></td>
+                    <td class="font-medium text-xs">${i.dataUltima}</td>
+                    <td class="font-bold text-slate-600 text-xs">${i.tipoRev}</td>
+                    <td class="font-medium">${i.horAtual}</td>
+                    <td class="text-slate-500 text-[10px] leading-tight">${i.dataHor}</td>
+                    <td class="font-medium">${i.horProx}</td>
+                    <td class="text-center font-black text-slate-800 text-base">${i.hrRestantes}</td>
+                    <td>${badge}</td>
+                    <td class="flex gap-2 justify-center">
+                        ${btnEdit}
+                        ${btnKits}
+                        ${btnEmail}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.abrirModalEmailOS = function(idFirebase) {
+            const i = globalData.find(d => d.idFirebase === idFirebase);
+            if (!i) return;
+
+            let snExibicao = i.sn ? i.sn : 'Sem ID';
+            let bodyTextBase = `Bom dia,\n\nEspero que se encontre bem!\n\nSegue em anexo a ordem de serviço do vosso equipamento.\n\n• ${i.frota}  N/Sº ${snExibicao}\n\n`;
+            let bodyTextFim = `Cordialmente,\nEquiport`;
+            
+            document.getElementById('previewEmailTexto').textContent = bodyTextBase + "[O link do PDF aparecerá aqui depois do upload]" + "\n\n" + bodyTextFim;
+            
+            const fileInput = document.getElementById('pdfOSUpload');
+            fileInput.value = ''; 
+            
+            document.getElementById('modalEmailOS').classList.remove('hidden');
+            document.getElementById('modalEmailOS').classList.add('flex');
+
+            const novoBtn = document.getElementById('btnConfirmarEmailOS').cloneNode(true);
+            document.getElementById('btnConfirmarEmailOS').replaceWith(novoBtn);
+            
+            const novoInput = fileInput.cloneNode(true);
+            fileInput.replaceWith(novoInput);
+
+            // NUVEM REAL: Upload do PDF para o Firebase Storage
+            novoInput.addEventListener('change', async function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    showLoading("A gerar Link Seguro na Nuvem...");
+                    
+                    try {
+                        const pdfRef = ref(storage, `ordens_servico/${i.idFirebase}_${Date.now()}.pdf`);
+                        await uploadBytesResumable(pdfRef, file);
+                        const pdfUrl = await getDownloadURL(pdfRef);
+                        
+                        const corpoFinal = bodyTextBase + `📄 *Baixar Ordem de Serviço:* ${pdfUrl}\n\n` + bodyTextFim;
+                        let subject = `Ordem de Serviço - ${i.frota}`;
+                        
+                        hideLoading();
+                        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(corpoFinal)}`;
+                        closeModal('modalEmailOS');
+                    } catch (error) {
+                        hideLoading();
+                        alert("Erro ao enviar PDF: " + error.message);
+                    }
+                }
+            });
+
+            novoBtn.onclick = function() {
+                const corpoFinal = bodyTextBase + bodyTextFim;
+                let subject = `Ordem de Serviço - ${i.frota}`;
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(corpoFinal)}`;
+                closeModal('modalEmailOS');
+            };
+        }
+
+        window.abrirEdicao = function(idFirebase) {
+            equipamentoEditando = globalData.find(d => d.idFirebase === idFirebase);
+            if(!equipamentoEditando) return;
+            document.getElementById('editEquipFrota').value = equipamentoEditando.frota;
+            document.getElementById('editEquipHoras').value = '';
+            
+            fotoComprimidaBase64 = null;
+            document.getElementById('fotoInput').value = '';
+            document.getElementById('fotoPreview').classList.add('hidden');
+
+            document.getElementById('editEquipModal').classList.remove('hidden');
+            document.getElementById('editEquipModal').classList.add('flex');
+        }
+
+        window.salvarEdicao = async function() {
+            if(!equipamentoEditando) return;
+            const novoValor = Number(document.getElementById('editEquipHoras').value);
+            if(isNaN(novoValor) || novoValor <= 0) return alert("Horímetro inválido!");
+
+            if(!fotoComprimidaBase64) {
+                alert("⚠️ AÇÃO BLOQUEADA: É obrigatório tirar/anexar uma foto do painel para provar o novo horímetro.");
+                return;
+            }
+
+            showLoading("A enviar dados para a Nuvem...");
+
+            const antes = equipamentoEditando.horAtual;
+            let dataFormatada = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            try {
+                // Upload da foto para a Nuvem
+                const responseUrl = await fetch(fotoComprimidaBase64);
+                const blob = await responseUrl.blob();
+                const pathFoto = `fotos_painel/pendencia_${equipamentoEditando.idFirebase}_${Date.now()}.jpg`;
+                const fotoRef = ref(storage, pathFoto);
+                await uploadBytesResumable(fotoRef, blob);
+                const fotoUrl = await getDownloadURL(fotoRef);
+
+                if (currentUser.perfil === 'admin') {
+                    // Atualiza direto no Firestore (aprovado)
+                    const docRef = doc(db, "equipamentos", equipamentoEditando.idFirebase);
+                    await updateDoc(docRef, {
+                        horAtual: novoValor,
+                        hrRestantes: Math.round(equipamentoEditando.horProx - novoValor),
+                        dataHor: `${dataFormatada} (por ${currentUser.nome})`
+                    });
+
+                    // Grava no Histórico da Nuvem
+                    await addDoc(collection(db, "historico"), {
+                        frota: equipamentoEditando.frota, sn: equipamentoEditando.sn, cliente: equipamentoEditando.cliente,
+                        antes: antes, depois: novoValor, data: dataFormatada, usuario: currentUser.nome,
+                        fotoUrl: fotoUrl, fotoPath: pathFoto, timestamp: Date.now()
+                    });
+
+                    hideLoading();
+                    alert("Atualizado na Nuvem com sucesso!");
+                } else {
+                    // Envia para a fila de Pendências do Firestore
+                    await addDoc(collection(db, "pendencias"), {
+                        idFirebaseEquip: equipamentoEditando.idFirebase,
+                        frota: equipamentoEditando.frota, sn: equipamentoEditando.sn, cliente: equipamentoEditando.cliente,
+                        antes: antes, depois: novoValor, fotoUrl: fotoUrl, fotoPath: pathFoto, 
+                        usuario: currentUser.nome, data: dataFormatada, timestamp: Date.now()
+                    });
+                    hideLoading();
+                    alert("✅ O novo horímetro foi enviado para aprovação. Aguarde!");
+                }
+                
+                closeModal('editEquipModal');
+            } catch (error) {
+                hideLoading();
+                alert("Erro ao salvar: " + error.message);
+            }
+        }
+
+        function atualizarBadgeAprovacoes() {
+            if (currentUser.perfil === 'admin') {
+                document.getElementById('badgeAprovacoes').innerText = pendencias.length;
+                if(pendencias.length > 0) {
+                    document.getElementById('badgeAprovacoes').classList.add('animate-pulse', 'bg-red-100', 'text-red-600');
+                } else {
+                    document.getElementById('badgeAprovacoes').classList.remove('animate-pulse', 'bg-red-100', 'text-red-600');
+                }
+            }
+        }
+
+        window.abrirAprovacoes = function() {
+            const ab = document.getElementById('aprovacaoBody');
+            ab.innerHTML = '';
+            
+            if(pendencias.length === 0) {
+                ab.innerHTML = '<p class="text-slate-400 col-span-2 text-center py-6">Nenhuma aprovação pendente.</p>';
+            } else {
+                pendencias.forEach((p, index) => {
+                    ab.innerHTML += `
+                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col bg-slate-50">
+                            <div class="h-40 bg-black relative">
+                                <img src="${p.fotoUrl}" class="w-full h-full object-contain cursor-pointer" onclick="verFoto('${p.fotoUrl}')" title="Clique para ampliar">
+                                <div class="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded font-bold">🔍 Clique na foto</div>
+                            </div>
+                            <div class="p-4 flex-1">
+                                <p class="font-bold text-slate-800 text-lg">${p.frota}</p>
+                                <p class="text-xs text-slate-500 mb-2">${p.sn} | ${p.cliente}</p>
+                                
+                                <div class="flex items-center justify-between bg-white border border-slate-200 p-2 rounded-lg mb-3">
+                                    <div class="text-center">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase">Estava</p>
+                                        <p class="text-sm font-bold text-slate-500">${p.antes}</p>
+                                    </div>
+                                    <div class="text-slate-300">➡️</div>
+                                    <div class="text-center">
+                                        <p class="text-[10px] font-bold text-blue-500 uppercase">Digitado</p>
+                                        <p class="text-lg font-black text-blue-600">${p.depois}</p>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mb-4">Enviado por <b>${p.usuario}</b> em ${p.data}</p>
+                                
+                                <div class="flex gap-2">
+                                    <button onclick="decisaoAprovacao('${p.idFirebase}', false)" class="flex-1 border border-red-200 text-red-600 font-bold py-2 rounded-lg hover:bg-red-50 text-sm">Recusar</button>
+                                    <button onclick="decisaoAprovacao('${p.idFirebase}', true)" class="flex-1 bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 text-sm shadow-sm">✅ Aprovar</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('aprovacaoModal').classList.remove('hidden');
+            document.getElementById('aprovacaoModal').classList.add('flex');
+        }
+
+        window.decisaoAprovacao = async function(idFirebasePendencia, aprovado) {
+            const p = pendencias.find(pen => pen.idFirebase === idFirebasePendencia);
+            if (!p) return;
+
+            showLoading("A processar e a limpar Nuvem...");
+
+            try {
+                if (aprovado) {
+                    let equip = globalData.find(e => e.idFirebase === p.idFirebaseEquip);
+                    if (equip) {
+                        const docRef = doc(db, "equipamentos", p.idFirebaseEquip);
+                        await updateDoc(docRef, {
+                            horAtual: p.depois,
+                            hrRestantes: Math.round(equip.horProx - p.depois),
+                            dataHor: `${p.data} (Aprov: ${currentUser.nome})`
+                        });
+
+                        await addDoc(collection(db, "historico"), {
+                            frota: p.frota, sn: p.sn, cliente: p.cliente, antes: p.antes, depois: p.depois, 
+                            data: p.data, usuario: `${p.usuario} (Ok: ${currentUser.nome})`, timestamp: Date.now()
+                        });
+                    }
+                }
+
+                // Deleta a foto do Storage para não ocupar espaço
+                if(p.fotoPath) {
+                    const fotoRef = ref(storage, p.fotoPath);
+                    await deleteObject(fotoRef).catch(e => console.log("Foto já apagada ou erro:", e));
+                }
+
+                // Remove da lista de pendências
+                await deleteDoc(doc(db, "pendencias", p.idFirebase));
+                
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                alert("Erro ao aprovar/recusar: " + error.message);
+            }
+        }
+
+        window.abrirKits = function(idFirebase) {
+            const i = globalData.find(d => d.idFirebase === idFirebase);
+            if (!i) return;
+            document.getElementById('modalTitle').innerText = `Revisão ${i.tipoRev} - ${i.frota}`;
+            
+            if (!i.kitsMarcados) i.kitsMarcados = [];
+
+            let listHtml = '';
+            let isAdmin = currentUser.perfil === 'admin';
+            let snExibicao = i.sn ? i.sn : 'Sem ID';
+
+            if (i.kits && i.kits.trim() !== '') {
+                const kitsArray = i.kits.split('\n').filter(k => k.trim());
+                
+                listHtml = kitsArray.map((k, index) => {
+                    const isChecked = i.kitsMarcados.includes(index) ? 'checked' : '';
+                    if (isAdmin) {
+                        return `
+                            <li class="flex items-start gap-3 py-2 border-b border-slate-100 last:border-0 hover:bg-slate-100 transition-colors px-2 rounded">
+                                <input type="checkbox" id="kit_${i.idFirebase}_${index}" ${isChecked}
+                                    onchange="toggleKit('${i.idFirebase}', ${index}, this.checked)"
+                                    class="mt-0.5 w-5 h-5 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 cursor-pointer accent-blue-600 flex-shrink-0">
+                                <label for="kit_${i.idFirebase}_${index}" class="text-sm font-medium text-slate-700 cursor-pointer select-none flex-1 leading-tight text-left">
+                                    ${k.trim()}
+                                </label>
+                                <button onclick="deletarPeca('${i.idFirebase}', ${index})" class="text-red-400 hover:text-red-600 font-bold px-2 text-lg leading-none flex-shrink-0" title="Excluir peça">&times;</button>
+                            </li>
+                        `;
+                    } else {
+                        return `
+                            <li class="flex items-start gap-3 py-2 border-b border-slate-100 last:border-0 px-2 rounded opacity-75 pointer-events-none">
+                                <input type="checkbox" id="kit_${i.idFirebase}_${index}" ${isChecked} disabled="disabled"
+                                    class="mt-0.5 w-5 h-5 text-slate-400 bg-slate-100 border-slate-300 rounded cursor-not-allowed flex-shrink-0">
+                                <label for="kit_${i.idFirebase}_${index}" class="text-sm font-medium text-slate-500 cursor-not-allowed select-none flex-1 leading-tight text-left">
+                                    ${k.trim()}
+                                </label>
+                            </li>
+                        `;
+                    }
+                }).join('');
+            }
+
+            document.getElementById('modalBody').innerHTML = listHtml ? `<ul class="flex flex-col">${listHtml}</ul>` : '<p class="text-slate-400">Sem peças.</p>';
+            
+            document.getElementById('btnSalvarPeca').onclick = function() { adicionarNovaPeca(i.idFirebase); };
+
+            const areaAdd = document.getElementById('areaAdicionarPeca');
+            const btnWhatsapp = document.getElementById('btnWhatsapp');
+
+            if (isAdmin) {
+                areaAdd.style.display = 'flex';
+                btnWhatsapp.style.display = 'flex';
+                document.getElementById('modalSubtitle').innerHTML = `${i.cliente} <span class="text-slate-400 mx-1">|</span> ID: <strong>${snExibicao}</strong> <br> <span class="font-bold text-blue-600 mt-1 block">Marque o que nós fornecemos</span>`;
+
+                btnWhatsapp.onclick = function() {
+                    let textKits = "";
+                    if (i.kits && i.kits.trim() !== '') {
+                        const kitsArray = i.kits.split('\n').filter(k => k.trim());
+                        kitsArray.forEach((k, index) => {
+                            let itemTexto = k.trim();
+                            let mark = (i.kitsMarcados && i.kitsMarcados.includes(index)) ? "✅ [Equiport]" : "🛒 [Cliente]";
+                            textKits += `- ${itemTexto} ${mark}\n`;
+                        });
+                    } else {
+                        textKits = "Nenhum kit cadastrado.";
+                    }
+                    let text = `*Ordem de Serviço - Revisão*\n\n*Frota:* ${i.frota}\n*ID/SN:* ${snExibicao}\n*Cliente:* ${i.cliente}\n*Revisão:* ${i.tipoRev}\n*Faltam:* ${i.hrRestantes}h\n\n*Kits/Peças:*\n${textKits}`;
+                    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+                };
+            } else {
+                areaAdd.style.display = 'none';
+                btnWhatsapp.style.display = 'none'; 
+                document.getElementById('modalSubtitle').innerHTML = `${i.cliente} <span class="text-slate-400 mx-1">|</span> ID: <strong>${snExibicao}</strong>`;
+            }
+
+            document.getElementById('pecasModal').classList.remove('hidden');
+            document.getElementById('pecasModal').classList.add('flex');
+        }
+
+        window.deletarPeca = async function(idFirebase, index) {
+            if (currentUser.perfil !== 'admin') return alert("Ação negada.");
+            if (!confirm("Tem a certeza que deseja excluir esta peça da lista?")) return;
+
+            const equip = globalData.find(d => d.idFirebase === idFirebase);
+            if (!equip || !equip.kits) return;
+
+            let kitsArray = equip.kits.split('\n').filter(k => k.trim());
+            kitsArray.splice(index, 1); 
+            equip.kits = kitsArray.join('\n'); 
+
+            if (equip.kitsMarcados) {
+                let novosMarcados = [];
+                equip.kitsMarcados.forEach(idx => {
+                    if (idx < index) novosMarcados.push(idx);
+                    else if (idx > index) novosMarcados.push(idx - 1);
+                });
+                equip.kitsMarcados = novosMarcados;
+            }
+
+            const docRef = doc(db, "equipamentos", idFirebase);
+            await updateDoc(docRef, { kits: equip.kits, kitsMarcados: equip.kitsMarcados });
+            abrirKits(idFirebase);
+        }
+
+        window.adicionarNovaPeca = async function(idFirebase) {
+            if (currentUser.perfil !== 'admin') return alert("Ação negada: Apenas administradores podem adicionar peças.");
+
+            const input = document.getElementById('inputNovaPeca');
+            const novaPeca = input.value.trim();
+            if(!novaPeca) return;
+
+            const equip = globalData.find(d => d.idFirebase === idFirebase);
+            if(!equip) return;
+
+            let novosKits = equip.kits && equip.kits.trim() !== '' ? equip.kits + '\n' + novaPeca : novaPeca;
+
+            const docRef = doc(db, "equipamentos", idFirebase);
+            await updateDoc(docRef, { kits: novosKits });
+            input.value = '';
+            abrirKits(idFirebase);
+        }
+
+        window.toggleKit = async function(idFirebase, kitIndex, isChecked) {
+            if (currentUser.perfil !== 'admin') return alert("Ação negada: Apenas administradores podem alterar o fornecimento das peças.");
+
+            const equip = globalData.find(d => d.idFirebase === idFirebase);
+            if (!equip) return;
+            let currentMarks = equip.kitsMarcados || [];
+
+            if (isChecked) {
+                if (!currentMarks.includes(kitIndex)) currentMarks.push(kitIndex);
+            } else {
+                currentMarks = currentMarks.filter(idx => idx !== kitIndex);
+            }
+            
+            const docRef = doc(db, "equipamentos", idFirebase);
+            await updateDoc(docRef, { kitsMarcados: currentMarks });
+        }
+
+        window.abrirHistorico = function() {
+            const hb = document.getElementById('historicoBody');
+            hb.innerHTML = historico.length === 0 ? '<p class="text-slate-400">Nenhuma edição registada na nuvem.</p>' : '';
+            historico.forEach(h => {
+                let btnFoto = h.fotoUrl ? `<button onclick="verFoto('${h.fotoUrl}')" class="mt-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">📸 Ver Foto (Nuvem)</button>` : '';
+                let snExibicao = h.sn ? h.sn : '-';
+                hb.innerHTML += `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-slate-800">${h.frota} <span class="font-normal text-slate-500">- ${h.cliente}</span></p>
+                                <p class="text-[0.65rem] text-slate-400 font-medium mb-1">${snExibicao}</p>
+                                <p class="text-sm font-medium text-slate-600 mt-1">Alterou de ${h.antes}h para <span class="text-blue-600 font-bold">${h.depois}h</span></p>
+                            </div>
+                            <div class="text-right flex flex-col items-end">
+                                <p class="text-xs font-bold text-slate-400">${h.data}</p>
+                                <p class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded mt-1 inline-block text-right">👤 ${h.usuario}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('historicoModal').classList.remove('hidden');
+            document.getElementById('historicoModal').classList.add('flex');
+        }
+
+        window.verFoto = function(url) {
+            document.getElementById('viewFotoImg').src = url;
+            document.getElementById('viewFotoModal').classList.remove('hidden');
+            document.getElementById('viewFotoModal').classList.add('flex');
+        }
+
+        window.closeModal = function(id) { 
+            document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); 
+        }
+
+        window.exportarExcel = function() {
+            if(globalData.length === 0) return alert("Não há dados para exportar.");
+
+            const dadosExcel = globalData.map(item => {
+                let statusTexto = "";
+                if(item.hrRestantes < -500) statusTexto = "Anomalia";
+                else if(item.hrRestantes < 0) statusTexto = "Atrasado";
+                else if(item.hrRestantes <= 50) statusTexto = "Crítico";
+                else if(item.hrRestantes <= 150) statusTexto = "Atenção";
+                else statusTexto = "OK";
+
+                let kitsFormatados = "";
+                if (item.kits && item.kits.trim() !== '') {
+                    const arr = item.kits.split('\n').filter(k => k.trim());
+                    kitsFormatados = arr.map((k, idx) => {
+                        let itemTexto = k.trim();
+                        let fornecido = (item.kitsMarcados && item.kitsMarcados.includes(idx)) ? "(Equiport)" : "(Cliente)";
+                        return `${itemTexto} ${fornecido}`;
+                    }).join('\n');
+                }
+
+                return {
+                    "CLIENTE": item.cliente, "FROTA / ID": item.frota, "NÚMERO DE SÉRIE (SN)": item.sn,
+                    "DATA ÚLT. REV.": item.dataUltima, "TIPO REV.": item.tipoRev, "PRÓX. REV.": item.horProx,
+                    "HOR. ATUAL": item.horAtual, "DATA HOR.": item.dataHor, "HORAS RESTANTES": item.hrRestantes,
+                    "STATUS": statusTexto, "KITS E MATERIAIS": kitsFormatados
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Controlo de Frota");
+            XLSX.writeFile(workbook, "EquipControl_Nuvem.xlsx");
+        }
+    </script>
+</body>
+</html>
