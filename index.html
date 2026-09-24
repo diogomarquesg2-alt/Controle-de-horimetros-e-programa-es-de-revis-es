@@ -51,34 +51,26 @@
     <!-- OVERLAY DO MENU MOBILE -->
     <div id="mobileOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleMenu()"></div>
 
-    <!-- MODAL DE LOGIN -->
+    <!-- MODAL DE LOGIN SEGURO (FIREBASE AUTH) -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900 bg-opacity-90 flex justify-center items-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-xl p-8 w-11/12 max-w-md shadow-2xl relative">
             <div class="text-center mb-6">
                 <div class="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
                 </div>
-                <h2 class="text-2xl font-extrabold text-slate-800">Acesso ao Sistema</h2>
-                <p class="text-sm text-slate-500 mt-1">Identifique-se para aceder ao Equip Control</p>
+                <h2 class="text-2xl font-extrabold text-slate-800">Acesso Seguro</h2>
+                <p class="text-xs text-emerald-600 font-bold mt-1 bg-emerald-50 inline-block px-2 py-1 rounded">🔒 Autenticação Nuvem Ativada</p>
             </div>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Seu Nome / Matrícula</label>
-                    <input type="text" id="loginNome" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: João Silva">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">E-mail Institucional</label>
+                    <input type="email" id="loginEmail" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin@equipcontrol.com">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Perfil de Acesso</label>
-                    <select id="loginPerfil" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="toggleSenha()">
-                        <option value="visitante">Visitante (Apenas Consulta)</option>
-                        <option value="mecanico">Mecânico / Apontador</option>
-                        <option value="admin">Administrador</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Senha Privada</label>
+                    <input type="password" id="loginSenha" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Sua senha secreta">
                 </div>
-                <div id="divSenha" class="hidden">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Senha</label>
-                    <input type="password" id="loginSenha" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite a sua senha">
-                </div>
-                <button onclick="efetuarLogin()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition shadow-md mt-2">Entrar</button>
+                <button onclick="efetuarLogin()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition shadow-md mt-2">Autenticar Sistema</button>
             </div>
         </div>
     </div>
@@ -237,7 +229,6 @@
             </div>
 
             <div class="mt-6 flex justify-end gap-2 flex-wrap">
-                <!-- Botão do WhatsApp (Só Admin) -->
                 <button id="btnWhatsapp" style="display: none;" class="flex-1 md:flex-none bg-green-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-green-600 flex justify-center items-center gap-2">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
                     WhatsApp
@@ -327,11 +318,12 @@
         </div>
     </div>
 
-    <!-- SCRIPT TIPO MÓDULO (FIREBASE V10) -->
+    <!-- SCRIPT TIPO MÓDULO (FIREBASE V10 + AUTHENTICATION) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVGsMIplOh3kMaVyzEeKr_fz8IYuo3CmM",
@@ -346,27 +338,27 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        const auth = getAuth(app); // NOVO: Módulo de Autenticação
+
+        // LISTA SEGURA: Associa o e-mail (que já está validado pela Google) ao perfil correto.
+        // Se quiser adicionar um mecânico específico depois (ex: gabriel@equipcontrol.com), basta colocar aqui!
+        const usuariosAutorizados = {
+            "admin@equipcontrol.com": { nome: "Diogo Marques (Admin)", perfil: "admin" },
+            "mecanico@equipcontrol.com": { nome: "Equipe de Mecânicos", perfil: "mecanico" },
+            "visitante@equipcontrol.com": { nome: "Acesso Visitante", perfil: "visitante" }
+        };
 
         // --- VARIÁVEIS GLOBAIS ---
-        let currentUser = { nome: '', perfil: '' };
+        let currentUser = { nome: '', perfil: '', email: '' };
         let globalData = [];
         let historico = [];
         let pendencias = [];
+        let syncIniciado = false;
         
         let equipamentoEditando = null;
         let fotoComprimidaBase64 = null;
         let chartStatusInstance = null;
         let chartTop10Instance = null;
-
-        // SENHAS MANTIDAS NO CÓDIGO CONFORME REQUISITO ANTERIOR
-        const senhas = {
-            "decio santos": "121312", "joao martin": "537801", "davi gomes": "489288", "andre filho": "359131",
-            "gabriel amaral": "430153", "matheus santos": "390420", "alcinei goncalves": "162284", "anderson santos": "364984",
-            "carlos santos": "284569", "fabiano lima": "226208", "arthur santos": "358741", "andre farias": "303397",
-            "joao silva": "373097", "gladstone pereira": "319562", "daniel silva": "229880", "danilson braz": "408728",
-            "leandro silva": "60289", "luiz rolemberg": "405212"
-        };
-        const senhaAdmin = "Equiport2026@";
 
         function showLoading(text) {
             document.getElementById('loadingText').innerText = text;
@@ -377,51 +369,54 @@
             document.getElementById('loadingOverlay').classList.add('hidden');
         }
 
+        // NOVO: O Firebase recorda quem fez o login, já não precisamos guardar em lado nenhum!
         window.onload = function() {
-            const savedUser = localStorage.getItem('equip_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                aplicarPerfil();
-            } else {
-                document.getElementById('loginModal').classList.remove('hidden');
-            }
             addEventListeners();
-            iniciarSincronizacaoNuvem();
+            
+            // O "Fiscal" da Google que verifica se tem a chave do cofre
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // Está logado! Fecha a tela de login.
+                    document.getElementById('loginModal').classList.add('hidden');
+                    
+                    let emailFormatado = user.email.toLowerCase();
+                    let perfilData = usuariosAutorizados[emailFormatado] || { nome: "Usuário Desconhecido", perfil: "visitante" };
+                    
+                    currentUser = { nome: perfilData.nome, perfil: perfilData.perfil, email: emailFormatado };
+                    aplicarPerfil();
+                    
+                    if(!syncIniciado){
+                        iniciarSincronizacaoNuvem();
+                        syncIniciado = true;
+                    }
+                } else {
+                    // Não está logado, mostra a janela.
+                    document.getElementById('loginModal').classList.remove('hidden');
+                }
+            });
         };
 
-        // --- SINCRONIZAÇÃO EM TEMPO REAL COM O FIREBASE ---
+        // --- SINCRONIZAÇÃO EM TEMPO REAL ---
         function iniciarSincronizacaoNuvem() {
-            // Sincroniza Equipamentos
             onSnapshot(collection(db, "equipamentos"), (snapshot) => {
                 globalData = [];
-                snapshot.forEach((doc) => {
-                    globalData.push({ idFirebase: doc.id, ...doc.data() });
-                });
+                snapshot.forEach((doc) => { globalData.push({ idFirebase: doc.id, ...doc.data() }); });
                 updateFilters(); 
                 renderDashboard();
             });
 
-            // Sincroniza Aprovações
             onSnapshot(collection(db, "pendencias"), (snapshot) => {
                 pendencias = [];
-                snapshot.forEach((doc) => {
-                    pendencias.push({ idFirebase: doc.id, ...doc.data() });
-                });
+                snapshot.forEach((doc) => { pendencias.push({ idFirebase: doc.id, ...doc.data() }); });
                 atualizarBadgeAprovacoes();
-                // Se a janela de aprovação estiver aberta, atualiza-a
-                if (!document.getElementById('aprovacaoModal').classList.contains('hidden')) {
-                    abrirAprovacoes();
-                }
-                renderDashboard(); // para atualizar os botões de edição bloqueados
+                if (!document.getElementById('aprovacaoModal').classList.contains('hidden')) abrirAprovacoes();
+                renderDashboard(); 
             });
 
-            // Sincroniza Histórico
             const qHist = query(collection(db, "historico"), orderBy("timestamp", "desc"));
             onSnapshot(qHist, (snapshot) => {
                 historico = [];
-                snapshot.forEach((doc) => {
-                    historico.push(doc.data());
-                });
+                snapshot.forEach((doc) => { historico.push(doc.data()); });
             });
         }
 
@@ -438,40 +433,28 @@
             }
         };
 
-        window.toggleSenha = function() {
-            const perfil = document.getElementById('loginPerfil').value;
-            document.getElementById('divSenha').style.display = perfil === 'visitante' ? 'none' : 'block';
-        };
-
-        window.efetuarLogin = function() {
-            const nomeDigitado = document.getElementById('loginNome').value.trim();
-            const perfil = document.getElementById('loginPerfil').value;
+        // NOVO: Função de Login Seguro do Firebase
+        window.efetuarLogin = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
             const senha = document.getElementById('loginSenha').value;
 
-            if(!nomeDigitado) return alert("Digite o seu nome!");
-            if(perfil === 'admin' && senha !== senhaAdmin) return alert("Senha de Administrador incorreta!");
+            if(!email || !senha) return alert("Por favor, preencha o e-mail e a senha!");
             
-            if(perfil === 'mecanico') {
-                const nomeLimpo = nomeDigitado.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/\s+/);
-                const primeiroNome = nomeLimpo[0];
-                const ultimoNome = nomeLimpo.length > 1 ? nomeLimpo[nomeLimpo.length - 1] : '';
-                const key = ultimoNome ? `${primeiroNome} ${ultimoNome}` : primeiroNome;
-
-                if(!senhas[key] || senhas[key] !== senha) {
-                    return alert("Mecânico não registado ou senha inválida!\nCertifique-se que utiliza o seu Primeiro e Último nome. Ex: Gabriel Amaral");
-                }
+            showLoading("A verificar credenciais na Google...");
+            try {
+                // Tenta abrir o cofre. Se a senha estiver errada, salta para o catch(error)
+                await signInWithEmailAndPassword(auth, email, senha);
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                alert("⛔ Acesso Negado! O e-mail ou a senha estão incorretos.");
             }
-
-            currentUser = { nome: nomeDigitado, perfil };
-            localStorage.setItem('equip_user', JSON.stringify(currentUser));
-            document.getElementById('loginModal').classList.add('hidden');
-            aplicarPerfil();
-            renderDashboard();
         };
 
         window.logout = function() {
-            localStorage.removeItem('equip_user');
-            location.reload();
+            signOut(auth).then(() => {
+                location.reload();
+            });
         };
 
         function aplicarPerfil() {
@@ -554,7 +537,6 @@
                                 let frotaSafe = String(row[1]||"-").trim();
                                 let snSafe = String(row[2]||"-").trim(); 
                                 
-                                // ID ÚNICO INFALÍVEL: Cliente + Frota + Número de Série
                                 let docId = (clienteSafe + "_" + frotaSafe + "_" + snSafe).replace(/[^a-zA-Z0-9_-]/g, '_'); 
 
                                 let formatData = (val) => {
@@ -574,7 +556,6 @@
                             }
                         });
 
-                        // Envia para o Firebase sem sobrepor máquinas diferentes
                         for(let r of records) {
                             const docRef = doc(db, "equipamentos", r.docId);
                             const equipAntigo = globalData.find(g => g.idFirebase === r.docId);
@@ -582,7 +563,7 @@
                                 r.kits = equipAntigo.kits;
                                 r.kitsMarcados = equipAntigo.kitsMarcados || [];
                             }
-                            delete r.docId; // Não precisa guardar o docId dentro do JSON no Firebase
+                            delete r.docId; 
                             await setDoc(docRef, r);
                         }
                         
@@ -594,7 +575,7 @@
                     }
                 };
                 reader.readAsArrayBuffer(file);
-                e.target.value = ''; // Limpa o input
+                e.target.value = ''; 
             });
         }
 
@@ -739,7 +720,6 @@
             const novoInput = fileInput.cloneNode(true);
             fileInput.replaceWith(novoInput);
 
-            // NUVEM REAL: Upload do PDF para o Firebase Storage
             novoInput.addEventListener('change', async function(e) {
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
@@ -801,7 +781,6 @@
             let dataFormatada = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
             try {
-                // Upload da foto para a Nuvem
                 const responseUrl = await fetch(fotoComprimidaBase64);
                 const blob = await responseUrl.blob();
                 const pathFoto = `fotos_painel/pendencia_${equipamentoEditando.idFirebase}_${Date.now()}.jpg`;
@@ -810,7 +789,6 @@
                 const fotoUrl = await getDownloadURL(fotoRef);
 
                 if (currentUser.perfil === 'admin') {
-                    // Atualiza direto no Firestore (aprovado)
                     const docRef = doc(db, "equipamentos", equipamentoEditando.idFirebase);
                     await updateDoc(docRef, {
                         horAtual: novoValor,
@@ -818,7 +796,6 @@
                         dataHor: `${dataFormatada} (por ${currentUser.nome})`
                     });
 
-                    // Grava no Histórico da Nuvem
                     await addDoc(collection(db, "historico"), {
                         frota: equipamentoEditando.frota, sn: equipamentoEditando.sn, cliente: equipamentoEditando.cliente,
                         antes: antes, depois: novoValor, data: dataFormatada, usuario: currentUser.nome,
@@ -828,7 +805,6 @@
                     hideLoading();
                     alert("Atualizado na Nuvem com sucesso!");
                 } else {
-                    // Envia para a fila de Pendências do Firestore
                     await addDoc(collection(db, "pendencias"), {
                         idFirebaseEquip: equipamentoEditando.idFirebase,
                         frota: equipamentoEditando.frota, sn: equipamentoEditando.sn, cliente: equipamentoEditando.cliente,
@@ -925,13 +901,11 @@
                     }
                 }
 
-                // Deleta a foto do Storage para não ocupar espaço
                 if(p.fotoPath) {
                     const fotoRef = ref(storage, p.fotoPath);
                     await deleteObject(fotoRef).catch(e => console.log("Foto já apagada ou erro:", e));
                 }
 
-                // Remove da lista de pendências
                 await deleteDoc(doc(db, "pendencias", p.idFirebase));
                 
                 hideLoading();
