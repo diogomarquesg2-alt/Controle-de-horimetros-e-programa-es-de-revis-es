@@ -425,7 +425,7 @@
             });
         }
 
-        // MAPEAMENTO DAS FUNÇÕES PARA O WINDOW (Necessário ao usar type="module")
+        // MAPEAMENTO DAS FUNÇÕES PARA O WINDOW
         window.toggleMenu = function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -520,7 +520,7 @@
                 reader.readAsDataURL(file);
             });
 
-            // UPLOAD DO EXCEL PARA O FIREBASE (BATCH / MULTIPLOS DOCS)
+            // UPLOAD DO EXCEL PARA O FIREBASE
             document.getElementById('fileUpload').addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -538,7 +538,6 @@
                             if(raw.length === 0) return;
                             let headIdx = -1, colKits = -1;
                             for (let i = 0; i < 20; i++) {
-                                // Tenta achar uma linha que tenha uma coluna CLIENTE (ou CLIENTES)
                                 if (raw[i] && raw[i].some(c => typeof c === 'string' && c.toUpperCase().includes('CLIENTE'))) {
                                     headIdx = i; colKits = raw[i].findIndex(c => typeof c === 'string' && c.toUpperCase().trim() === 'KITS'); break;
                                 }
@@ -553,11 +552,11 @@
                                 
                                 let clienteSafe = String(row[0]||"SEM_CLIENTE").trim();
                                 let frotaSafe = String(row[1]||"-").trim();
+                                let snSafe = String(row[2]||"-").trim(); 
                                 
-                                // ID ÚNICO COMBINADO: Cliente + Frota (evita apagar frotas iguais de clientes diferentes)
-                                let docId = (clienteSafe + "_" + frotaSafe).replace(/[^a-zA-Z0-9_-]/g, '_'); 
+                                // ID ÚNICO INFALÍVEL: Cliente + Frota + Número de Série
+                                let docId = (clienteSafe + "_" + frotaSafe + "_" + snSafe).replace(/[^a-zA-Z0-9_-]/g, '_'); 
 
-                                // Função para ler as datas perfeitamente
                                 let formatData = (val) => {
                                     if (val instanceof Date) return val.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                                     return String(val || "-").trim();
