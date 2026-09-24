@@ -534,11 +534,12 @@
                         
                         let records = [];
                         workbook.SheetNames.forEach(sheet => {
-                            const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {header: 1, raw: false, defval: "", dateNF: "dd/mm/yyyy"});
+                            const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {header: 1});
                             if(raw.length === 0) return;
                             let headIdx = -1, colKits = -1;
                             for (let i = 0; i < 20; i++) {
-                                if (raw[i] && raw[i].some(c => typeof c === 'string' && c.toUpperCase().includes('CLIENTES'))) {
+                                // Tenta achar uma linha que tenha uma coluna CLIENTE (ou CLIENTES)
+                                if (raw[i] && raw[i].some(c => typeof c === 'string' && c.toUpperCase().includes('CLIENTE'))) {
                                     headIdx = i; colKits = raw[i].findIndex(c => typeof c === 'string' && c.toUpperCase().trim() === 'KITS'); break;
                                 }
                             }
@@ -550,37 +551,44 @@
                                 let prox = parseFloat(row[5]), atual = parseFloat(row[6]);
                                 if(isNaN(prox) || isNaN(atual)) continue;
                                 
+                                let clienteSafe = String(row[0]||"SEM_CLIENTE").trim();
                                 let frotaSafe = String(row[1]||"-").trim();
-                                // Substitui barras por tracos para ser ID válido no Firebase
-                                let docId = frotaSafe.replace(/\//g, '-').replace(/\s+/g, '_'); 
+                                
+                                // ID ÚNICO COMBINADO: Cliente + Frota (evita apagar frotas iguais de clientes diferentes)
+                                let docId = (clienteSafe + "_" + frotaSafe).replace(/[^a-zA-Z0-9_-]/g, '_'); 
+
+                                // Função para ler as datas perfeitamente
+                                let formatData = (val) => {
+                                    if (val instanceof Date) return val.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                                    return String(val || "-").trim();
+                                };
 
                                 records.push({
                                     docId: docId,
                                     origem: sheet, 
-                                    cliente: String(row[0]||"-").trim(), frota: frotaSafe, sn: String(row[2]||"-").trim(),
-                                    dataUltima: String(row[3]||"-").trim(), tipoRev: String(row[4]||"-").trim(), horProx: prox, horAtual: atual,
-                                    dataHor: String(row[7]||"-").trim(), hrRestantes: Math.round(prox - atual), 
+                                    cliente: clienteSafe, frota: frotaSafe, sn: String(row[2]||"-").trim(),
+                                    dataUltima: formatData(row[3]), tipoRev: String(row[4]||"-").trim(), horProx: prox, horAtual: atual,
+                                    dataHor: formatData(row[7]), hrRestantes: Math.round(prox - atual), 
                                     kits: colKits !== -1 ? String(row[colKits]||"") : "",
                                     kitsMarcados: []
                                 });
                             }
                         });
 
-                        // Envia para o Firebase um por um (ou atualiza)
+                        // Envia para o Firebase sem sobrepor máquinas diferentes
                         for(let r of records) {
                             const docRef = doc(db, "equipamentos", r.docId);
-                            // Mantemos os kits antigos se já existirem na nuvem, atualizamos o resto
                             const equipAntigo = globalData.find(g => g.idFirebase === r.docId);
                             if(equipAntigo) {
                                 r.kits = equipAntigo.kits;
                                 r.kitsMarcados = equipAntigo.kitsMarcados || [];
                             }
-                            delete r.docId; // Não precisa guardar dentro dos dados
+                            delete r.docId; // Não precisa guardar o docId dentro do JSON no Firebase
                             await setDoc(docRef, r);
                         }
                         
                         hideLoading();
-                        alert("Planilha sincronizada com a Nuvem com sucesso!");
+                        alert("Planilha sincronizada com a Nuvem com sucesso! Foram processadas " + records.length + " máquinas.");
                     } catch(err) { 
                         hideLoading();
                         alert("Erro ao ler Excel: " + err); 
